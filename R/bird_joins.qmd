@@ -1,0 +1,91 @@
+---
+output: html_document
+editor_options: 
+  chunk_output_type: console
+---
+
+## Task 1 : Joins on Birds
+```{r}
+library(tidyverse)
+library(lubridate)
+```
+
+#read in the data frames and store as variables
+```{r}
+bird_observations <- read_csv(here::here("data", "52_pp52_birds_1.csv"))
+
+sites <- read_csv(here::here("data", "52_pp52_sites_1.csv"))
+
+surveys <- read_csv(here::here("data", "52_pp52_surveys_1.csv"))
+
+taxalist <- read_csv(here::here("data", "52_pp52_taxalist_1.csv"))
+```
+
+# make a subset df with species BHCO & RWBL form sites LI-W & NU-C
+```{r}
+birds_subset <- bird_observations %>%
+  filter(species_id %in% c("BHCO", "RWBL"), site_id %in% c("LI-W", "NU-C")) 
+```
+
+# Left join practice
+```{r}
+birds_left <- left_join(birds_subset, sites, (by = "site_id"))
+
+birds_left <- left_join(birds_left, taxalist, (by = "species_id"))
+```
+
+#Full join practice
+```{r}
+# I expect a full join between "birds_subset" and "sites" to contain all columns from both data sets ----
+
+birds_full <- full_join(birds_subset, sites, (by = "site_id"))
+```
+
+## Task 2 : Data Wrangling and visualization with birds
+
+```{r}
+# Re-name the notes column to match the "notes" and "surveys" datasets ----
+
+# already compatabile?
+bird_observations <- bird_observations %>%
+  rename(bird_obs_notes = notes)
+
+surveys <- surveys %>%
+  rename(bird_obs_notes = notes)
+
+# Create a subset that contains all observations in original data, but combines taxonomic, site, and survey info.
+
+#limit to "survey_date", "common_name", "park_name", and "bird_count" columns only
+
+# Use lubridate to create a new column containing only the month number, then turn it into a factor again.
+
+birds <- bird_observations %>%
+  left_join(sites, by = "site_id") %>%
+  left_join(surveys, by = "survey_id")%>%
+  left_join(taxalist, by = "species_id") %>%
+  select("survey_date", "common_name", "park_name", "bird_count")%>%
+  mutate(survey_month = lubridate::month(survey_date))%>%
+  mutate(survey_month = as.factor(survey_month))
+```
+
+```{r}
+# learn a new function "relocate" ----
+birds <- birds %>%
+  dplyr::relocate(survey_month, .after = survey_date)
+```
+
+
+```{r}
+
+# find the total number of birds observed by parks and month ----
+# filter to only include parks "Lindo", "Orme", "Palomino", and "Sonrisa"
+
+tot_birds <- birds %>%
+  group_by(park_name, survey_month)%>%
+  summarise(total_birds = sum(bird_count, na.rm = TRUE)) %>%
+  filter(park_name %in% c("Lindo", "Orme", "Palomino", "Sonrisa"))
+```
+
+
+
+

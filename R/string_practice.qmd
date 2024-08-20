@@ -1,0 +1,56 @@
+---
+output: html_document
+editor_options: 
+  chunk_output_type: console
+---
+## Task 3
+
+```{r}
+# use tools>addins>browse and select paste as data.frame and save as a variable
+
+alarm_report <- data.frame(
+  stringsAsFactors = FALSE,
+              date = c("2020-03-14", "2020-03-15", "2020-04-10", "2020-04-18"),
+          building = c("Engineering-North",
+                       "Bren Hall","Engineering-South","Engr-North"),
+     alarm_message = c("10:02am -- HVAC system down, facilities management alerted",
+                       "8:24am -- Elevator North out of service",
+                       "12:41am -- Fire alarm, UCSB fire responded and cleared",
+                       "9:58pm -- Campus point emergency siren, UCPD responded")
+)
+```
+
+```{r}
+# use mutate and str_replace to change engr to engineering
+alarm_report <- alarm_report %>%
+  mutate(building = str_replace(building, pattern = "Engr", replacement = "Engineering" ))
+```
+
+```{r}
+# use mutate and separate to create a new column and specify building and wing
+alarm_report <- alarm_report %>%
+  mutate(building = str_replace(building, pattern ="-", replacement = " "))%>%
+  separate(col = building, into = c("building", "wing"), sep = " ")
+```
+
+
+```{r}
+# only keep observations with the word "responded" in the alarm message
+
+alarm_report <- alarm_report %>%
+  filter(str_detect(alarm_message, "responded"))
+```
+
+```{r}
+# separate the message time form the rest of the message at "--"
+alarm_report <- alarm_report %>%
+  mutate(alarm_message = str_replace(alarm_message, pattern = "--", replacement = " "))
+```
+
+```{r}
+# convert the date column to a date class using lubridate
+alarm_report <- alarm_report %>%
+  mutate(date == lubridate::ymd(date))
+```
+
+
